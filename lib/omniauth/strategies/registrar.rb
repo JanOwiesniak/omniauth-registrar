@@ -1,4 +1,4 @@
-require 'omniauth/strategy'
+require 'omniauth'
 require 'digest'
 
 module OmniAuth
@@ -6,7 +6,7 @@ module OmniAuth
     class Registrar
       AuthenticationError = Class.new(RuntimeError)
 
-      include OmniAuth::Strategy
+      include ::OmniAuth::Strategy
       option :name, 'registrar'
       option :fields, [:name, :email]
 
