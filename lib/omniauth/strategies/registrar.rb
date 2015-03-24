@@ -8,7 +8,7 @@ module OmniAuth
 
       include OmniAuth::Strategy
       option :name, 'registrar'
-      option :fields, [:name]
+      option :fields, [:name, :email]
 
       uid do
         generate_uid(request.params['email'], request.params['password'])
