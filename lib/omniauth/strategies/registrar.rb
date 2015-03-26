@@ -23,35 +23,37 @@ module OmniAuth
 
       def request_phase
         if sign_up?
-          title = "Sign Up"
-          fields = sign_up_fields
+          with_sign_up_form
+        else
+          with_sign_in_form
         end
+      end
 
-        if sign_in?
-          title = "Sign In"
-          fields = sign_in_fields
-        end
-
+      def with_sign_in_form
+        title = "Sign In"
+        fields = sign_in_fields
         form = OmniAuth::Form.new(:title => title, :url => callback_path)
-
         fields.each do |field|
           form.text_field field.to_s.capitalize.gsub('_', ' '), field.to_s
         end
-
         form.button title
-
         html = form.instance_variable_get('@html')
-
-        if sign_up?
-          html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_in'>Sign In</a></div>"
-        end
-
-        if sign_in?
-          html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_up'>Sign Up</a></div>"
-        end
-
+        html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_up'>Sign Up</a></div>"
         form.instance_variable_set('@html', html)
+        form.to_response
+      end
 
+      def with_sign_up_form
+        title = "Sign Up"
+        fields = sign_up_fields
+        form = OmniAuth::Form.new(:title => title, :url => callback_path)
+        fields.each do |field|
+          form.text_field field.to_s.capitalize.gsub('_', ' '), field.to_s
+        end
+        form.button title
+        html = form.instance_variable_get('@html')
+        html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_in'>Sign In</a></div>"
+        form.instance_variable_set('@html', html)
         form.to_response
       end
 
