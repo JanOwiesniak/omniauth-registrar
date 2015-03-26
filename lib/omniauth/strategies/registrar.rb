@@ -21,12 +21,54 @@ module OmniAuth
         end
       end
 
+      def request_phase
+        if sign_up?
+          title = "Sign Up"
+          fields = sign_up_fields
+        end
+
+        if sign_in?
+          title = "Sign In"
+          fields = sign_in_fields
+        end
+
+        form = OmniAuth::Form.new(:title => title, :url => callback_path)
+
+        fields.each do |field|
+          form.text_field field.to_s.capitalize.gsub('_', ' '), field.to_s
+        end
+
+        form.button title
+
+        html = form.instance_variable_get('@html')
+
+        if sign_up?
+          html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_in'>Sign In</a></div>"
+        end
+
+        if sign_in?
+          html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_up'>Sign Up</a></div>"
+        end
+
+        form.instance_variable_set('@html', html)
+
+        form.to_response
+      end
+
       def callback_phase
         try_to_register
         super
       end
 
       private
+
+      def sign_up_fields
+        options.fields << 'password' << 'password_confirmation'
+      end
+
+      def sign_in_fields
+        ['email', 'password']
+      end
 
       def generate_uid(*args)
         Digest::SHA256.hexdigest(args.join(''))[0..19]
@@ -54,10 +96,12 @@ module OmniAuth
       end
 
       def sign_up?
+        @env['QUERY_STRING'].match(/sign_up/) ||
         !!request.params['password_confirmation']
       end
 
       def sign_in?
+        @env['QUERY_STRING'].match(/sign_in/) ||
         !sign_up?
       end
 
