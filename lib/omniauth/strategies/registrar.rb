@@ -1,12 +1,13 @@
 require 'omniauth'
 require 'digest'
+require 'omniauth/strategies/registrar/form'
 
 module OmniAuth
   module Strategies
     class Registrar
+      include ::OmniAuth::Strategy
       AuthenticationError = Class.new(RuntimeError)
 
-      include ::OmniAuth::Strategy
       option :name, 'registrar'
       option :fields, [:name, :email]
 
@@ -22,39 +23,7 @@ module OmniAuth
       end
 
       def request_phase
-        if sign_up?
-          with_sign_up_form
-        else
-          with_sign_in_form
-        end
-      end
-
-      def with_sign_in_form
-        title = "Sign In"
-        fields = sign_in_fields
-        form = OmniAuth::Form.new(:title => title, :url => callback_path)
-        fields.each do |field|
-          form.text_field field.to_s.capitalize.gsub('_', ' '), field.to_s
-        end
-        form.button title
-        html = form.instance_variable_get('@html')
-        html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_up'>Sign Up</a></div>"
-        form.instance_variable_set('@html', html)
-        form.to_response
-      end
-
-      def with_sign_up_form
-        title = "Sign Up"
-        fields = sign_up_fields
-        form = OmniAuth::Form.new(:title => title, :url => callback_path)
-        fields.each do |field|
-          form.text_field field.to_s.capitalize.gsub('_', ' '), field.to_s
-        end
-        form.button title
-        html = form.instance_variable_get('@html')
-        html << "\n<div style='text-align:center; margin:20px auto 0;'> or <a href='?sign_in'>Sign In</a></div>"
-        form.instance_variable_set('@html', html)
-        form.to_response
+        sign_up? ? build_sign_up_form : build_sign_in_form
       end
 
       def callback_phase
@@ -64,16 +33,24 @@ module OmniAuth
 
       private
 
+      def generate_uid(*args)
+        Digest::SHA256.hexdigest(args.join(''))[0..19]
+      end
+
+      def build_sign_up_form
+        SignUpForm.new(sign_up_fields, callback_path).render
+      end
+
+      def build_sign_in_form
+        SignInForm.new(sign_in_fields, callback_path).render
+      end
+
       def sign_up_fields
         options.fields << 'password' << 'password_confirmation'
       end
 
       def sign_in_fields
         ['email', 'password']
-      end
-
-      def generate_uid(*args)
-        Digest::SHA256.hexdigest(args.join(''))[0..19]
       end
 
       def try_to_register
